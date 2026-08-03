@@ -39,12 +39,16 @@ function rand(a, b) { return a + Math.random() * (b - a); }
 function deg(d) { return d * Math.PI / 180; }
 function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
 
-// ---------- PALETTES FOR PINK (LEFT) AND BLUE (RIGHT) FLOWERS ----------
-// Optimized to be slightly warmer and softer. Reduced saturation, increased lightness.
+// ---------- PALETTES FOR PINK (LEFT), PURPLE (CENTER), AND BLUE (RIGHT) ----------
 const PINK_PALETTES = [
-  { h: [345, 355], s: [70, 80], baseL: [15, 20], tipL: [60, 70] },
-  { h: [335, 345], s: [65, 78], baseL: [16, 22], tipL: [65, 75] },
-  { h: [350, 360], s: [72, 82], baseL: [14, 20], tipL: [58, 68] }
+  { h: [320, 335], s: [65, 75], baseL: [15, 20], tipL: [65, 75] },
+  { h: [310, 325], s: [60, 72], baseL: [16, 22], tipL: [68, 78] },
+  { h: [325, 340], s: [68, 78], baseL: [14, 20], tipL: [62, 72] }
+];
+
+const PURPLE_PALETTES = [
+  { h: [270, 285], s: [65, 75], baseL: [15, 20], tipL: [60, 70] },
+  { h: [280, 295], s: [60, 72], baseL: [16, 22], tipL: [64, 74] }
 ];
 
 const BLUE_PALETTES = [
@@ -108,7 +112,6 @@ class Petal {
     }
   }
 
-  // UPDATED: DRAW FUNCTION FOR SLIGHT TRANSLUCENCY
   draw(ctx, cx, cy, swayAngle) {
     if (this.progress <= 0) return;
 
@@ -119,9 +122,7 @@ class Petal {
     const currentWid = this.wid * (0.3 + 0.7 * e);
 
     ctx.save();
-    // 1. ADDED: Apply a subtle overall alpha to remove the "sticking out" effect
-    // 1.0 is solid, 0.0 is invisible. Values around 0.8 - 0.9 work best for "slight translucency".
-    ctx.globalAlpha = 0.9 * e; // Added transparency
+    ctx.globalAlpha = 0.9 * e;
     
     ctx.translate(cx + this.attachX, cy + this.attachY + offsetY);
     ctx.rotate(this.angle + swayAngle * 0.25);
@@ -129,7 +130,6 @@ class Petal {
     tracePetalPath(ctx, currentLen, currentWid, this.curve, this.notch);
 
     const grad = ctx.createLinearGradient(0, 0, currentLen, 0);
-    // 2. MODIFIED: Added transparency values to the color stops.
     grad.addColorStop(0.0, hslStr(this.baseColor[0], this.baseColor[1], this.baseColor[2], 0.85 * e));
     grad.addColorStop(0.65, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2] * 0.85, 0.90 * e));
     grad.addColorStop(1.0, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2], 0.95 * e));
@@ -137,7 +137,6 @@ class Petal {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // 3. MODIFIED: Softened outline slightly
     ctx.lineWidth = 0.4;
     ctx.strokeStyle = hslStr(this.baseColor[0], this.baseColor[1], Math.max(0, this.baseColor[2] - 10), 0.15 * e);
     ctx.stroke();
@@ -154,15 +153,15 @@ class Stem {
     this.tieX = tieX;
     this.tieY = tieY;
     
-    this.width = Math.max(3, R * 0.05);
-    this.color = { h: rand(105, 125), s: rand(45, 60), l: rand(16, 24) };
+    this.width = Math.max(7, R * 0.12);
+    this.color = { h: rand(105, 125), s: rand(45, 60), l: rand(18, 28) };
     
     this.leaves = [-1, 1].map(side => ({
       side,
-      t: rand(0.2, 0.4),
-      angle: side * deg(50) + rand(-0.15, 0.15),
-      len: R * rand(0.6, 0.8),
-      wid: R * rand(0.3, 0.4)
+      t: rand(0.2, 0.45),
+      angle: side * deg(45) + rand(-0.15, 0.15),
+      len: R * rand(0.85, 1.15),
+      wid: R * rand(0.45, 0.6)
     }));
 
     this.progress = 0;
@@ -198,8 +197,8 @@ class Stem {
     ctx.quadraticCurveTo(midX, midY, endX, endY);
 
     const grad = ctx.createLinearGradient(startX, startY, endX, endY);
-    grad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l + 8, 0.9 * e));
-    grad.addColorStop(1, hslStr(this.color.h, this.color.s, this.color.l - 4, 0.8 * e));
+    grad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l + 10, 0.95 * e));
+    grad.addColorStop(1, hslStr(this.color.h, this.color.s, this.color.l - 4, 0.85 * e));
     
     ctx.strokeStyle = grad;
     ctx.lineWidth = this.width;
@@ -216,10 +215,14 @@ class Stem {
 
       tracePetalPath(ctx, leaf.len, leaf.wid, leaf.len * 0.12, 0);
       const leafGrad = ctx.createLinearGradient(0, 0, leaf.len, 0);
-      leafGrad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l - 2, 0.8 * e));
-      leafGrad.addColorStop(1, hslStr(this.color.h, this.color.s + 12, this.color.l + 14, 0.9 * e));
+      leafGrad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l - 2, 0.85 * e));
+      leafGrad.addColorStop(1, hslStr(this.color.h, this.color.s + 12, this.color.l + 14, 0.95 * e));
       ctx.fillStyle = leafGrad;
       ctx.fill();
+
+      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = hslStr(this.color.h, this.color.s + 10, this.color.l + 25, 0.3 * e);
+      ctx.stroke();
 
       ctx.restore();
     });
@@ -289,12 +292,12 @@ function drawEucalyptusSprig(ctx, x, y, angle, scale, sway) {
   ctx.moveTo(0, 0);
   ctx.lineTo(0, -100);
   ctx.strokeStyle = 'hsl(140, 20%, 25%)';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3.5;
   ctx.stroke();
 
   const pairs = [20, 45, 70, 90];
   pairs.forEach((py, i) => {
-    const r = 14 - i * 2;
+    const r = 16 - i * 2;
     ctx.beginPath();
     ctx.arc(-r + 2, -py, r, 0, Math.PI * 2);
     ctx.fillStyle = 'hsl(150, 25%, 38%)';
@@ -313,7 +316,7 @@ function drawEucalyptusSprig(ctx, x, y, angle, scale, sway) {
   ctx.restore();
 }
 
-// ---------- SIDE ACCENTS (Blue Left / Pink Right) ----------
+// ---------- SIDE ACCENTS ----------
 class SideAccents {
   constructor() {
     this.particles = [];
@@ -332,7 +335,7 @@ class SideAccents {
       speedY: rand(-0.2, -0.6),
       speedX: rand(-0.2, 0.2),
       alpha: rand(0.2, 0.8),
-      hue: isLeft ? rand(190, 215) : rand(330, 350)
+      hue: isLeft ? rand(310, 335) : rand(195, 225)
     };
   }
 
@@ -354,16 +357,16 @@ class SideAccents {
   draw(ctx, t) {
     const sway = Math.sin(t * 1.5) * 0.08;
 
-    // 1. LEFT SIDE: BLUEISH LEAF STEMS
+    // 1. LEFT SIDE: PINKISH LEAF STEMS
     ctx.save();
-    drawLeafBranch(ctx, W * 0.12, H * 0.65, deg(-35) + sway, 1.2, 210, 60, 35);
-    drawLeafBranch(ctx, W * 0.05, H * 0.45, deg(-15) - sway, 0.9, 220, 70, 45);
+    drawLeafBranch(ctx, W * 0.12, H * 0.65, deg(-35) + sway, 1.2, 330, 65, 35);
+    drawLeafBranch(ctx, W * 0.05, H * 0.45, deg(-15) - sway, 0.9, 320, 70, 45);
     ctx.restore();
 
-    // 2. RIGHT SIDE: PINKISH LEAF STEMS
+    // 2. RIGHT SIDE: BLUEISH LEAF STEMS
     ctx.save();
-    drawLeafBranch(ctx, W * 0.88, H * 0.65, deg(35) - sway, 1.2, 340, 65, 35);
-    drawLeafBranch(ctx, W * 0.95, H * 0.45, deg(15) + sway, 0.9, 350, 75, 45);
+    drawLeafBranch(ctx, W * 0.88, H * 0.65, deg(35) - sway, 1.2, 210, 60, 35);
+    drawLeafBranch(ctx, W * 0.95, H * 0.45, deg(15) + sway, 0.9, 220, 70, 45);
     ctx.restore();
 
     // 3. Floating Sparkles
@@ -390,7 +393,7 @@ function drawLeafBranch(ctx, x, y, angle, scale, hue, sat, light) {
   ctx.moveTo(0, 0);
   ctx.quadraticCurveTo(15, -60, 0, -120);
   ctx.strokeStyle = `hsl(${hue}, ${sat - 20}%, ${light - 15}%)`;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   const leafPos = [20, 45, 70, 95];
@@ -455,7 +458,7 @@ class Rocket {
       if (i === 0) ctx.moveTo(pt.x, pt.y);
       else ctx.lineTo(pt.x, pt.y);
     }
-    ctx.strokeStyle = 'hsla(345, 90%, 65%, 0.8)';
+    ctx.strokeStyle = 'hsla(325, 90%, 65%, 0.8)';
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.restore();
@@ -525,9 +528,8 @@ class FireworkManager {
       const vx = (hx / 16) * scale * rand(0.9, 1.1);
       const vy = (hy / 16) * scale * rand(0.9, 1.1);
 
-      // Matches fireworks colors (Blue on Left / Pink on Right)
       const isLeft = x < W / 2;
-      const hue = isLeft ? rand(210, 230) : rand(340, 355);
+      const hue = isLeft ? rand(315, 335) : rand(210, 230);
       const sat = rand(85, 100);
       const light = rand(55, 70);
       const color = `hsl(${hue}, ${sat}%, ${light}%)`;
@@ -566,7 +568,7 @@ class FireworkManager {
   }
 }
 
-// ---------- BOUQUET LAYOUT (PINK LEFT / BLUE RIGHT) ----------
+// ---------- BOUQUET LAYOUT (PINK LEFT / PURPLE CENTER / BLUE RIGHT) ----------
 const N_ROSES = 10;
 let roses = [];
 let sprigs = [];
@@ -611,16 +613,12 @@ function buildScene() {
 
   layout.forEach(pos => {
     let palette;
-    // OPPOSITE PALETTE LAYOUT:
-    // Left side flowers = PINK, Right side flowers = BLUE
-    if (pos.x < cx - unit * 0.2) {
+    if (pos.x < cx - unit * 0.7) {
       palette = PINK_PALETTES[Math.floor(Math.random() * PINK_PALETTES.length)];
-    } else if (pos.x > cx + unit * 0.2) {
+    } else if (pos.x > cx + unit * 0.7) {
       palette = BLUE_PALETTES[Math.floor(Math.random() * BLUE_PALETTES.length)];
     } else {
-      palette = Math.random() < 0.5 
-        ? PINK_PALETTES[Math.floor(Math.random() * PINK_PALETTES.length)]
-        : BLUE_PALETTES[Math.floor(Math.random() * BLUE_PALETTES.length)];
+      palette = PURPLE_PALETTES[Math.floor(Math.random() * PURPLE_PALETTES.length)];
     }
 
     roses.push(new Rose(pos.x, pos.y, roseR, palette, tiePoint.x, tiePoint.y));
@@ -669,23 +667,23 @@ function frame(now) {
   const t = (now - startTime) / 1000;
   ctx.clearRect(0, 0, W, H);
 
-  // Background Ambient Glow (Blue Left, Pink Right to match sides)
-  const gBlue = ctx.createRadialGradient(W * 0.3, H * 0.4, 0, W * 0.3, H * 0.4, W * 0.5);
+  // Background Ambient Glow
+  const gPink = ctx.createRadialGradient(W * 0.3, H * 0.4, 0, W * 0.3, H * 0.4, W * 0.5);
+  gPink.addColorStop(0, 'rgba(50, 10, 35, 0.4)');
+  gPink.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gPink;
+  ctx.fillRect(0, 0, W, H);
+
+  const gBlue = ctx.createRadialGradient(W * 0.7, H * 0.4, 0, W * 0.7, H * 0.4, W * 0.5);
   gBlue.addColorStop(0, 'rgba(10, 20, 50, 0.4)');
   gBlue.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = gBlue;
   ctx.fillRect(0, 0, W, H);
 
-  const gPink = ctx.createRadialGradient(W * 0.7, H * 0.4, 0, W * 0.7, H * 0.4, W * 0.5);
-  gPink.addColorStop(0, 'rgba(50, 10, 30, 0.4)');
-  gPink.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = gPink;
-  ctx.fillRect(0, 0, W, H);
-
   const breezePhase = t * 1.8;
   const sway = Math.sin(breezePhase) * 0.05;
 
-  // 1. Render Side Accents (Blue Left, Pink Right)
+  // 1. Render Side Accents
   sideAccents.update();
   sideAccents.draw(ctx, t);
 
@@ -696,7 +694,7 @@ function frame(now) {
   // 3. Render Filler Greenery
   sprigs.forEach(sp => drawEucalyptusSprig(ctx, sp.x, sp.y, sp.a, sp.s, sway));
 
-  // 4. Render Roses (Pink Left, Blue Right)
+  // 4. Render Roses with Thicker Stems
   for (let i = 0; i < roses.length; i++) {
     roses[i].update(t);
     roses[i].draw(ctx, breezePhase);
