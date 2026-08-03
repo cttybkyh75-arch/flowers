@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Rose Bouquet - Opposite Color Contrast</title>
+<title>Soft Translucent Bouquet</title>
 <style>
   html, body {
     margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
@@ -39,17 +39,18 @@ function rand(a, b) { return a + Math.random() * (b - a); }
 function deg(d) { return d * Math.PI / 180; }
 function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
 
-// ---------- COLOR PALETTES ----------
+// ---------- PALETTES FOR PINK (LEFT) AND BLUE (RIGHT) FLOWERS ----------
+// Optimized to be slightly warmer and softer. Reduced saturation, increased lightness.
 const PINK_PALETTES = [
-  { h: [345, 355], s: [85, 95], baseL: [12, 18], tipL: [50, 62] },
-  { h: [335, 345], s: [80, 92], baseL: [14, 20], tipL: [55, 68] },
-  { h: [350, 360], s: [88, 98], baseL: [10, 16], tipL: [48, 58] }
+  { h: [345, 355], s: [70, 80], baseL: [15, 20], tipL: [60, 70] },
+  { h: [335, 345], s: [65, 78], baseL: [16, 22], tipL: [65, 75] },
+  { h: [350, 360], s: [72, 82], baseL: [14, 20], tipL: [58, 68] }
 ];
 
 const BLUE_PALETTES = [
-  { h: [210, 225], s: [80, 95], baseL: [12, 18], tipL: [52, 65] },
-  { h: [225, 240], s: [75, 90], baseL: [14, 20], tipL: [58, 70] },
-  { h: [195, 210], s: [85, 95], baseL: [10, 16], tipL: [48, 60] }
+  { h: [210, 225], s: [65, 75], baseL: [15, 20], tipL: [62, 72] },
+  { h: [225, 240], s: [60, 72], baseL: [16, 22], tipL: [68, 78] },
+  { h: [195, 210], s: [70, 80], baseL: [14, 20], tipL: [58, 68] }
 ];
 
 function hslStr(h, s, l, a = 1) { 
@@ -107,6 +108,7 @@ class Petal {
     }
   }
 
+  // UPDATED: DRAW FUNCTION FOR SLIGHT TRANSLUCENCY
   draw(ctx, cx, cy, swayAngle) {
     if (this.progress <= 0) return;
 
@@ -117,22 +119,27 @@ class Petal {
     const currentWid = this.wid * (0.3 + 0.7 * e);
 
     ctx.save();
-    ctx.globalAlpha = e;
+    // 1. ADDED: Apply a subtle overall alpha to remove the "sticking out" effect
+    // 1.0 is solid, 0.0 is invisible. Values around 0.8 - 0.9 work best for "slight translucency".
+    ctx.globalAlpha = 0.9 * e; // Added transparency
+    
     ctx.translate(cx + this.attachX, cy + this.attachY + offsetY);
     ctx.rotate(this.angle + swayAngle * 0.25);
 
     tracePetalPath(ctx, currentLen, currentWid, this.curve, this.notch);
 
     const grad = ctx.createLinearGradient(0, 0, currentLen, 0);
-    grad.addColorStop(0.0, hslStr(this.baseColor[0], this.baseColor[1], this.baseColor[2]));
-    grad.addColorStop(0.65, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2] * 0.85));
-    grad.addColorStop(1.0, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2]));
+    // 2. MODIFIED: Added transparency values to the color stops.
+    grad.addColorStop(0.0, hslStr(this.baseColor[0], this.baseColor[1], this.baseColor[2], 0.85 * e));
+    grad.addColorStop(0.65, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2] * 0.85, 0.90 * e));
+    grad.addColorStop(1.0, hslStr(this.tipColor[0], this.tipColor[1], this.tipColor[2], 0.95 * e));
 
     ctx.fillStyle = grad;
     ctx.fill();
 
-    ctx.lineWidth = 0.5;
-    ctx.strokeStyle = hslStr(this.baseColor[0], this.baseColor[1], Math.max(0, this.baseColor[2] - 6), 0.3 * e);
+    // 3. MODIFIED: Softened outline slightly
+    ctx.lineWidth = 0.4;
+    ctx.strokeStyle = hslStr(this.baseColor[0], this.baseColor[1], Math.max(0, this.baseColor[2] - 10), 0.15 * e);
     ctx.stroke();
 
     ctx.restore();
@@ -191,8 +198,8 @@ class Stem {
     ctx.quadraticCurveTo(midX, midY, endX, endY);
 
     const grad = ctx.createLinearGradient(startX, startY, endX, endY);
-    grad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l + 8));
-    grad.addColorStop(1, hslStr(this.color.h, this.color.s, this.color.l - 4));
+    grad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l + 8, 0.9 * e));
+    grad.addColorStop(1, hslStr(this.color.h, this.color.s, this.color.l - 4, 0.8 * e));
     
     ctx.strokeStyle = grad;
     ctx.lineWidth = this.width;
@@ -209,8 +216,8 @@ class Stem {
 
       tracePetalPath(ctx, leaf.len, leaf.wid, leaf.len * 0.12, 0);
       const leafGrad = ctx.createLinearGradient(0, 0, leaf.len, 0);
-      leafGrad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l - 2));
-      leafGrad.addColorStop(1, hslStr(this.color.h, this.color.s + 12, this.color.l + 14));
+      leafGrad.addColorStop(0, hslStr(this.color.h, this.color.s, this.color.l - 2, 0.8 * e));
+      leafGrad.addColorStop(1, hslStr(this.color.h, this.color.s + 12, this.color.l + 14, 0.9 * e));
       ctx.fillStyle = leafGrad;
       ctx.fill();
 
@@ -262,7 +269,7 @@ class Rose {
       ctx.rotate(spatialSway * 0.3);
       ctx.beginPath();
       ctx.arc(0, -this.R * 0.04, this.R * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = hslStr(centerPetal.baseColor[0], centerPetal.baseColor[1], centerPetal.baseColor[2] * 0.65);
+      ctx.fillStyle = hslStr(centerPetal.baseColor[0], centerPetal.baseColor[1], centerPetal.baseColor[2] * 0.65, 0.9);
       ctx.fill();
       ctx.restore();
     }
@@ -325,7 +332,7 @@ class SideAccents {
       speedY: rand(-0.2, -0.6),
       speedX: rand(-0.2, 0.2),
       alpha: rand(0.2, 0.8),
-      hue: isLeft ? rand(190, 215) : rand(330, 350) // Blue Left / Pink Right
+      hue: isLeft ? rand(190, 215) : rand(330, 350)
     };
   }
 
